@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, ShoppingCart, User, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
   const { getItemCount } = useCart();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,15 +42,26 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors relative",
+                    isActive 
+                      ? "text-primary" 
+                      : "text-muted-foreground hover:text-primary"
+                  )}
+                >
+                  {item.name}
+                  {isActive && (
+                    <div className="absolute -bottom-1 left-0 w-full h-0.5 bg-gradient-primary rounded-full" />
+                  )}
+                </Link>
+              );
+            })}
           </nav>
 
           {/* Search Bar */}
@@ -113,16 +125,24 @@ export const Header = () => {
 
               {/* Mobile Navigation */}
               <nav className="space-y-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className="block text-sm font-medium text-muted-foreground hover:text-primary transition-colors py-2"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={cn(
+                        "block text-sm font-medium transition-colors py-2",
+                        isActive 
+                          ? "text-primary font-semibold" 
+                          : "text-muted-foreground hover:text-primary"
+                      )}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </nav>
             </div>
           </div>
