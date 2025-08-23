@@ -49,7 +49,7 @@ export const ProductDetail = () => {
     });
   };
 
-  const discount = product.originalPrice 
+  const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
@@ -76,18 +76,17 @@ export const ProductDetail = () => {
                 className="w-full h-full object-cover"
               />
             </div>
-            
+
             {product.images.length > 1 && (
               <div className="grid grid-cols-4 gap-2">
                 {product.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImageIndex(index)}
-                    className={`aspect-square overflow-hidden rounded-md border-2 transition-colors ${
-                      selectedImageIndex === index 
-                        ? 'border-primary' 
-                        : 'border-transparent hover:border-muted-foreground'
-                    }`}
+                    className={`aspect-square overflow-hidden rounded-md border-2 transition-colors ${selectedImageIndex === index
+                      ? 'border-primary'
+                      : 'border-transparent hover:border-muted-foreground'
+                      }`}
                   >
                     <img
                       src={image}
@@ -116,11 +115,11 @@ export const ProductDetail = () => {
                   </Badge>
                 )}
               </div>
-              
+
               <h1 className="text-3xl md:text-4xl font-bold mb-4">
                 {product.name}
               </h1>
-              
+
               <div className="flex items-center space-x-2 mb-4">
                 <div className="flex items-center space-x-1">
                   <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
@@ -160,7 +159,7 @@ export const ProductDetail = () => {
                   <ShoppingCart className="h-5 w-5 mr-2" />
                   {product.inStock ? "Add to Cart" : "Out of Stock"}
                 </Button>
-                
+
                 <Button size="lg" variant="outline">
                   <Heart className="h-5 w-5" />
                 </Button>
@@ -184,7 +183,7 @@ export const ProductDetail = () => {
                   <div className="text-xs text-muted-foreground">On orders over $50</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4 text-center">
                   <Shield className="h-6 w-6 mx-auto mb-2 text-primary" />
@@ -192,7 +191,7 @@ export const ProductDetail = () => {
                   <div className="text-xs text-muted-foreground">1 year coverage</div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="p-4 text-center">
                   <RotateCcw className="h-6 w-6 mx-auto mb-2 text-primary" />
