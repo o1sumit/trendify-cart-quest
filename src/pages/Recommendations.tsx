@@ -1,60 +1,80 @@
-import { useState } from 'react';
-import { Filter, SlidersHorizontal, Grid3X3, List } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Grid3X3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { ProductCard } from '@/components/product/ProductCard';
-import { mockProducts } from '@/lib/mock-data';
+import { ProductFilters, ProductFilterState } from '@/components/product/ProductFilters';
+import { mockProducts, Product } from '@/lib/mock-data';
 
 export const Recommendations = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState('recommended');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState('all');
+  const [filters, setFilters] = useState<ProductFilterState>({
+    categories: [],
+    priceRange: [0, 500],
+    rating: 0,
+    inStock: false,
+    tags: [],
+    sortBy: 'recommended'
+  });
 
-  // Get unique categories
-  const categories = ['all', ...Array.from(new Set(mockProducts.map(p => p.category)))];
+  // Get unique categories and tags
+  const categories = Array.from(new Set(mockProducts.map(p => p.category)));
+  const allTags = Array.from(new Set(mockProducts.flatMap(p => p.tags)));
+  const maxPrice = Math.max(...mockProducts.map(p => p.price));
 
-  // Filter and sort products
-  let filteredProducts = mockProducts.filter(product => {
-    if (filterCategory !== 'all' && product.category !== filterCategory) return false;
-    
-    if (priceRange !== 'all') {
-      const price = product.price;
-      switch (priceRange) {
-        case 'under-50':
-          return price < 50;
-        case '50-100':
-          return price >= 50 && price <= 100;
-        case '100-200':
-          return price >= 100 && price <= 200;
-        case 'over-200':
-          return price > 200;
-        default:
-          return true;
+  // Filter and sort products using useMemo for performance
+  const filteredProducts = useMemo(() => {
+    let products = mockProducts.filter((product: Product) => {
+      // Category filter
+      if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
+        return false;
       }
-    }
-    
-    return true;
-  });
 
-  // Sort products
-  filteredProducts = filteredProducts.sort((a, b) => {
-    switch (sortBy) {
-      case 'price-low':
-        return a.price - b.price;
-      case 'price-high':
-        return b.price - a.price;
-      case 'rating':
-        return b.rating - a.rating;
-      case 'name':
-        return a.name.localeCompare(b.name);
-      case 'recommended':
-      default:
-        return (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0);
-    }
-  });
+      // Price range filter
+      if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
+        return false;
+      }
+
+      // Rating filter
+      if (filters.rating > 0 && product.rating < filters.rating) {
+        return false;
+      }
+
+      // Stock filter
+      if (filters.inStock && !product.inStock) {
+        return false;
+      }
+
+      // Tags filter
+      if (filters.tags.length > 0) {
+        const hasMatchingTag = filters.tags.some(tag => product.tags.includes(tag));
+        if (!hasMatchingTag) return false;
+      }
+
+      return true;
+    });
+
+    // Sort products
+    products.sort((a, b) => {
+      switch (filters.sortBy) {
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'rating':
+          return b.rating - a.rating;
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'newest':
+          return b.id.localeCompare(a.id);
+        case 'recommended':
+        default:
+          return (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0) || b.rating - a.rating;
+      }
+    });
+
+    return products;
+  }, [filters]);
 
   const recommendedProducts = filteredProducts.filter(p => p.recommended);
 
@@ -94,113 +114,82 @@ export const Recommendations = () => {
         )}
 
         {/* Filters and Controls */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div className="flex flex-wrap items-center gap-4">
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category === 'all' ? 'All Categories' : category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={priceRange} onValueChange={setPriceRange}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Price Range" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Prices</SelectItem>
-                <SelectItem value="under-50">Under $50</SelectItem>
-                <SelectItem value="50-100">$50 - $100</SelectItem>
-                <SelectItem value="100-200">$100 - $200</SelectItem>
-                <SelectItem value="over-200">Over $200</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button variant="outline" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              More Filters
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recommended">Recommended</SelectItem>
-                <SelectItem value="price-low">Price: Low to High</SelectItem>
-                <SelectItem value="price-high">Price: High to Low</SelectItem>
-                <SelectItem value="rating">Highest Rated</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="flex border rounded-md">
-              <Button
-                variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('grid')}
-                className="rounded-r-none"
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('list')}
-                className="rounded-l-none"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Results */}
-        <div className="mb-6">
-          <p className="text-muted-foreground">
-            Showing {filteredProducts.length} products
-          </p>
-        </div>
-
-        {/* Products Grid */}
-        <div className={`grid gap-6 ${
-          viewMode === 'grid' 
-            ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
-            : 'grid-cols-1'
-        }`}>
-          {filteredProducts.map(product => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              className={viewMode === 'list' ? 'flex-row' : ''}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
+          {/* Sidebar Filters */}
+          <div className="lg:col-span-1">
+            <ProductFilters
+              onFiltersChange={setFilters}
+              categories={categories}
+              tags={allTags}
+              maxPrice={maxPrice}
             />
-          ))}
-        </div>
-
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-muted-foreground mb-4">
-              No products found matching your criteria.
-            </div>
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setFilterCategory('all');
-                setPriceRange('all');
-              }}
-            >
-              Clear Filters
-            </Button>
           </div>
-        )}
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* View Mode Toggle */}
+            <div className="flex justify-between items-center mb-6">
+              <p className="text-muted-foreground">
+                Showing {filteredProducts.length} products
+              </p>
+              
+              <div className="flex border rounded-md">
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-r-none"
+                >
+                  <Grid3X3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'list' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('list')}
+                  className="rounded-l-none"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className={`grid gap-6 ${
+              viewMode === 'grid' 
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+                : 'grid-cols-1'
+            }`}>
+              {filteredProducts.map(product => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  className={viewMode === 'list' ? 'flex-row' : ''}
+                />
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-muted-foreground mb-4">
+                  No products found matching your criteria.
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setFilters({
+                    categories: [],
+                    priceRange: [0, maxPrice],
+                    rating: 0,
+                    inStock: false,
+                    tags: [],
+                    sortBy: 'recommended'
+                  })}
+                >
+                  Clear Filters
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

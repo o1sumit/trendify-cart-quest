@@ -42,9 +42,8 @@ export const mockProducts: Product[] = [
     originalPrice: 249.99,
     description: 'Premium wireless headphones with active noise cancellation, 30-hour battery life, and crystal-clear audio quality. Perfect for music lovers and professionals.',
     images: [
-      '/placeholder.svg',
-      '/placeholder.svg',
-      '/placeholder.svg'
+      '/src/assets/headphones-1.jpg',
+      '/src/assets/headphones-2.jpg'
     ],
     category: 'Electronics',
     rating: 4.8,
@@ -61,8 +60,8 @@ export const mockProducts: Product[] = [
     originalPrice: 399.99,
     description: 'Advanced fitness tracking with heart rate monitoring, GPS, and smartphone integration. Track your workouts and stay connected.',
     images: [
-      '/placeholder.svg',
-      '/placeholder.svg'
+      '/src/assets/watch-1.jpg',
+      '/src/assets/watch-2.jpg'
     ],
     category: 'Wearables',
     rating: 4.6,
@@ -78,7 +77,7 @@ export const mockProducts: Product[] = [
     price: 79.99,
     description: 'Ergonomic aluminum laptop stand with adjustable height and angle. Improve your posture and productivity.',
     images: [
-      '/placeholder.svg'
+      '/src/assets/laptop-stand.jpg'
     ],
     category: 'Accessories',
     rating: 4.4,
@@ -95,8 +94,7 @@ export const mockProducts: Product[] = [
     originalPrice: 69.99,
     description: 'Fast wireless charging pad compatible with all Qi-enabled devices. Sleek design with LED indicators.',
     images: [
-      '/placeholder.svg',
-      '/placeholder.svg'
+      '/src/assets/charging-pad.jpg'
     ],
     category: 'Electronics',
     rating: 4.3,
@@ -112,7 +110,7 @@ export const mockProducts: Product[] = [
     price: 159.99,
     description: 'RGB backlit mechanical keyboard with customizable keys, perfect for gaming and productivity.',
     images: [
-      '/placeholder.svg'
+      '/src/assets/keyboard.jpg'
     ],
     category: 'Gaming',
     rating: 4.7,
@@ -128,8 +126,7 @@ export const mockProducts: Product[] = [
     price: 129.99,
     description: '4K webcam with auto-focus and built-in microphone. Perfect for video calls and streaming.',
     images: [
-      '/placeholder.svg',
-      '/placeholder.svg'
+      '/src/assets/webcam.jpg'
     ],
     category: 'Electronics',
     rating: 4.5,
