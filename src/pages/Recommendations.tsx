@@ -28,11 +28,11 @@ export const Recommendations = () => {
       try {
         setLoading(true);
         const result = await productService.getAllProducts(1, 20);
-        const productList = Array.isArray(result?.data?.data?.products)
-          ? result.data.products
+        const productList = Array.isArray(result?.data?.data)
+          ? result?.data?.data
           : [];
-        console.log("productList ", result?.data?.data?.products)
-        setProducts(result?.data?.data?.products);
+        console.log("productList ", result?.data?.data)
+        setProducts(result?.data?.data);
       } catch (err) {
         setError('Failed to fetch products.');
         console.error(err);

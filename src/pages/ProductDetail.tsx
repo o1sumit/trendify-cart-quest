@@ -21,8 +21,7 @@ export const ProductDetail = () => {
   const fetchProductDetails = async () => {
     try {
       const result = await productService.getProductById(id)
-      console.log(result?.data?.data)
-      setProductDetails(result?.data?.data)
+      setProductDetails(result?.data?.data[0])
     } catch (error) {
       console.error(error)
     }

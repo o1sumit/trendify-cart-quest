@@ -61,7 +61,9 @@ export const doFetch = (
   } & AxiosRequestConfig,
 ) => {
   const { contentType, signal, showToast, ...others } = otherOptions ?? {};
-  const apiUrl = `${baseUrl}/v1/api${url}`;
+  // const apiUrl = `${baseUrl}/v1/api${url}`;
+  const apiUrl = `${baseUrl}/ai-agent/query`;
+
   let options = {
     ...others,
     url: apiUrl,
@@ -72,7 +74,8 @@ export const doFetch = (
     } as any,
   } as any;
 
-  const token = localStorage.getItem("authToken");
+  // const token = localStorage.getItem("authToken");
+  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE5Y2ZlZWI3OGJkYWMyZjU5ZTNlNzgiLCJpYXQiOjE3NTYyMTk2MDcsImV4cCI6MTc1NjIyMzIwN30.smT7oefICV2rt0seNRXYdQEFJNa1VO2bYNMHkgiGH4c'
 
   if (token) {
     options.headers.Authorization = `Bearer ${token}`;
