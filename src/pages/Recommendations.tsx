@@ -1,30 +1,69 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Grid3X3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductFilters, ProductFilterState } from '@/components/product/ProductFilters';
-import { mockProducts, Product } from '@/lib/mock-data';
+import { Product } from '@/lib/mock-data';
+import { Skeleton } from '@/components/ui/skeleton';
+import productService from '@/services/api/product/productService';
 
 export const Recommendations = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [products, setProducts] = useState<Product[]>([]); // always array
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [filters, setFilters] = useState<ProductFilterState>({
     categories: [],
     priceRange: [0, 500],
     rating: 0,
     inStock: false,
     tags: [],
-    sortBy: 'recommended'
+    sortBy: 'recommended',
   });
 
-  // Get unique categories and tags
-  const categories = Array.from(new Set(mockProducts.map(p => p.category)));
-  const allTags = Array.from(new Set(mockProducts.flatMap(p => p.tags)));
-  const maxPrice = Math.max(...mockProducts.map(p => p.price));
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const result = await productService.getAllProducts(1, 20);
+        const productList = Array.isArray(result?.data?.data)
+          ? result?.data?.data
+          : [];
+        console.log("productList ", result?.data?.data)
+        setProducts(result?.data?.data);
+      } catch (err) {
+        setError('Failed to fetch products.');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Filter and sort products using useMemo for performance
+    fetchProducts();
+  }, []);
+
+  // Get unique categories and tags safely
+  const categories = useMemo(
+    () => Array.from(new Set(products.map((p) => p?.category).filter(Boolean))),
+    [products]
+  );
+
+  const allTags = useMemo(
+    () => Array.from(new Set(products.flatMap((p) => p?.tags || []))),
+    [products]
+  );
+
+  const maxPrice = useMemo(
+    () => (products.length > 0 ? Math.max(...products.map((p) => p?.price || 0)) : 500),
+    [products]
+  );
+
   const filteredProducts = useMemo(() => {
-    let products = mockProducts.filter((product: Product) => {
+    let filtered = products.filter((product) => {
+      if (!product) return false;
+
       // Category filter
       if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
         return false;
@@ -47,15 +86,15 @@ export const Recommendations = () => {
 
       // Tags filter
       if (filters.tags.length > 0) {
-        const hasMatchingTag = filters.tags.some(tag => product.tags.includes(tag));
+        const hasMatchingTag = filters.tags.some((tag) => product.tags?.includes(tag));
         if (!hasMatchingTag) return false;
       }
 
       return true;
     });
 
-    // Sort products
-    products.sort((a, b) => {
+    // Sorting
+    filtered.sort((a, b) => {
       switch (filters.sortBy) {
         case 'price-low':
           return a.price - b.price;
@@ -73,10 +112,13 @@ export const Recommendations = () => {
       }
     });
 
-    return products;
-  }, [filters]);
+    return filtered;
+  }, [products, filters]);
 
-  const recommendedProducts = filteredProducts.filter(p => p.recommended);
+  const recommendedProducts = useMemo(
+    () => filteredProducts.filter((p) => p?.recommended),
+    [filteredProducts]
+  );
 
   return (
     <div className="min-h-screen py-8 px-4">
@@ -92,7 +134,7 @@ export const Recommendations = () => {
         </div>
 
         {/* Recommended Section */}
-        {recommendedProducts.length > 0 && (
+        {!loading && recommendedProducts.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center space-x-2 mb-6">
               <Badge className="bg-gradient-primary text-primary-foreground border-0">
@@ -100,9 +142,9 @@ export const Recommendations = () => {
               </Badge>
               <h2 className="text-xl font-semibold">Based on your preferences</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {recommendedProducts.slice(0, 4).map(product => (
+              {recommendedProducts.slice(0, 4).map((product) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -113,7 +155,9 @@ export const Recommendations = () => {
           </div>
         )}
 
-        {/* Filters and Controls */}
+        {error && <div className="text-center text-red-500 mb-8">{error}</div>}
+
+        {/* Filters and Products */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
           {/* Sidebar Filters */}
           <div className="lg:col-span-1">
@@ -132,7 +176,7 @@ export const Recommendations = () => {
               <p className="text-muted-foreground">
                 Showing {filteredProducts.length} products
               </p>
-              
+
               <div className="flex border rounded-md">
                 <Button
                   variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -154,35 +198,48 @@ export const Recommendations = () => {
             </div>
 
             {/* Products Grid */}
-            <div className={`grid gap-6 ${
-              viewMode === 'grid' 
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
+            <div
+              className={`grid gap-6 ${viewMode === 'grid'
+                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
                 : 'grid-cols-1'
-            }`}>
-              {filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  className={viewMode === 'list' ? 'flex-row' : ''}
-                />
-              ))}
+                }`}
+            >
+              {loading ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="space-y-2">
+                    <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                ))
+              ) : (
+                filteredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    className={viewMode === 'list' ? 'flex-row' : ''}
+                  />
+                ))
+              )}
             </div>
 
-            {filteredProducts.length === 0 && (
+            {!loading && filteredProducts.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-muted-foreground mb-4">
                   No products found matching your criteria.
                 </div>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setFilters({
-                    categories: [],
-                    priceRange: [0, maxPrice],
-                    rating: 0,
-                    inStock: false,
-                    tags: [],
-                    sortBy: 'recommended'
-                  })}
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setFilters({
+                      categories: [],
+                      priceRange: [0, maxPrice],
+                      rating: 0,
+                      inStock: false,
+                      tags: [],
+                      sortBy: 'recommended',
+                    })
+                  }
                 >
                   Clear Filters
                 </Button>

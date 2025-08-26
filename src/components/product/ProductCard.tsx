@@ -16,11 +16,11 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
   const { addToCart } = useCart();
   const { toast } = useToast();
-
+  console.log("product ", product)
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!product.inStock) {
       toast({
         title: "Out of Stock",
@@ -37,7 +37,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
     });
   };
 
-  const discount = product.originalPrice 
+  const discount = product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
     : 0;
 
@@ -46,14 +46,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       "group overflow-hidden border-0 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-1",
       className
     )}>
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product?.name}`}>
         <div className="relative aspect-square overflow-hidden">
           <img
             src={product.images[0]}
             alt={product.name}
             className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          
+
           {/* Badges */}
           <div className="absolute top-3 left-3 space-y-1">
             {product.trending && (
@@ -92,7 +92,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
             <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-primary transition-colors">
               {product.name}
             </h3>
-            
+
             <div className="flex items-center space-x-1">
               <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
               <span className="text-sm font-medium">{product.rating}</span>

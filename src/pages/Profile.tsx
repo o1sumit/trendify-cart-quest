@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { User, Edit3, Package, Heart, Settings, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,15 +10,38 @@ import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/contexts/UserContext';
 import { mockOrders, mockProducts } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import userService from '@/services/api/user/userService';
 
 export const Profile = () => {
   const { user, updateUser } = useUser();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const [orderList, setOrderList] = useState([]);
   const [editForm, setEditForm] = useState({
-    name: user?.name || '',
-    email: user?.email || ''
+    name: userDetails?.name || '',
+    email: userDetails?.email || ''
   });
+
+
+  const getUserDetails = async () => {
+    try {
+      const result = await userService.getUserDetails('68a975f34e68827946de7f6b');
+      setEditForm({
+        name: result?.data?.user.name,
+        email: result?.data?.user.email
+      });
+      setOrderList(result?.data?.orders);
+      setUserDetails(result?.data?.user)
+
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  useEffect(() => {
+    getUserDetails();
+  }, []);
 
   const handleSaveProfile = () => {
     if (user) {
@@ -48,7 +71,7 @@ export const Profile = () => {
 
   const getProductById = (id: string) => mockProducts.find(p => p.id === id);
 
-  if (!user) {
+  if (!userDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -68,12 +91,12 @@ export const Profile = () => {
             <Card>
               <CardHeader className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={userDetails.avatar} alt={userDetails.name} />
                   <AvatarFallback className="text-lg">
-                    {user.name.split(' ').map(n => n[0]).join('')}
+                    {userDetails.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 {isEditing ? (
                   <div className="space-y-4">
                     <div>
@@ -104,11 +127,11 @@ export const Profile = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <h2 className="text-xl font-bold">{user.name}</h2>
-                    <p className="text-muted-foreground">{user.email}</p>
+                    <h2 className="text-xl font-bold">{userDetails.name}</h2>
+                    <p className="text-muted-foreground">{userDetails.email}</p>
                     <div className="flex items-center justify-center text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-1" />
-                      Member since {new Date(user.joinDate).toLocaleDateString()}
+                      Member since {new Date(userDetails.joinDate).toLocaleDateString()}
                     </div>
                     <Button
                       size="sm"
@@ -135,9 +158,9 @@ export const Profile = () => {
                     <Package className="h-4 w-4 text-primary" />
                     <span className="text-sm">Total Orders</span>
                   </div>
-                  <span className="font-medium">{mockOrders.length}</span>
+                  <span className="font-medium">{orderList.length}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Heart className="h-4 w-4 text-red-500" />
@@ -145,7 +168,7 @@ export const Profile = () => {
                   </div>
                   <span className="font-medium">12</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Settings className="h-4 w-4 text-muted-foreground" />
@@ -168,7 +191,7 @@ export const Profile = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {mockOrders.map((order) => (
+                  {orderList.map((order) => (
                     <div key={order.id} className="border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-4">
                         <div>
@@ -186,9 +209,9 @@ export const Profile = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <Separator className="my-3" />
-                      
+
                       <div className="space-y-2">
                         {order.items.map((item, index) => {
                           const product = getProductById(item.productId);
@@ -214,7 +237,7 @@ export const Profile = () => {
                   ))}
                 </div>
 
-                {mockOrders.length === 0 && (
+                {orderList.length === 0 && (
                   <div className="text-center py-12">
                     <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                     <h3 className="font-medium mb-2">No orders yet</h3>
