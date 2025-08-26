@@ -6,7 +6,7 @@ export default {
     getAllProducts: (page: number, size: number) =>
         doFetch(`${PRODUCTS_API_ENDPOINTS}`, REQUEST_METHODS.POST,
             {
-                "query": "get latest 20 product",
+                "query": "get latest 6 product",
                 "dbType": "mongodb",
                 "dbUrl": "mongodb+srv://dixitmwa:DixitWa%40123!@cluster0.qiysaz9.mongodb.net/shopdb"
             }
@@ -17,6 +17,15 @@ export default {
                 "query": "get detail of " + id + " product",
                 "dbType": "mongodb",
                 "dbUrl": "mongodb+srv://dixitmwa:DixitWa%40123!@cluster0.qiysaz9.mongodb.net/shopdb"
+            }
+        ),
+    getTrendingProducts: () =>
+        doFetch(`${PRODUCTS_API_ENDPOINTS}`, REQUEST_METHODS.POST,
+            {
+                "query": "Whats popular 10 product of today",
+                "dbType": "mongodb",
+                "dbUrl": "mongodb+srv://dixitmwa:DixitWa%40123!@cluster0.qiysaz9.mongodb.net/shopdb",
+                "refreshSchema": false
             }
         ),
 

@@ -36,9 +36,11 @@ export const Home = () => {
                   Get Recommendations
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary">
-                <TrendingUp className="h-5 w-5 mr-2" />
-                View Trending
+              <Button size="lg" variant="hero">
+                <Link to="/trending" className="inline-flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  <span>View Trending</span>
+                </Link>
               </Button>
             </div>
           </div>
@@ -63,7 +65,7 @@ export const Home = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6">
             {trendingProducts.map(product => (
               <ProductCard
                 key={product.id}

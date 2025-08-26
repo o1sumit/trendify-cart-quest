@@ -17,6 +17,7 @@ import PrivateRoute from "./routes/PrivateRoute";
 import PublicRoute from "./routes/PublicRoute";
 import { Cart } from "./pages/Cart";
 import NotFound from "./pages/NotFound";
+import Trending from "./pages/Trending";
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
                       </PrivateRoute>
                     }
                   />
+                  <Route path="/trending" element={<Trending />} />
                   <Route path="/search" element={<SearchResults />} />
                   <Route
                     path="/profile"

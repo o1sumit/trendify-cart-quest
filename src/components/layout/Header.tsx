@@ -27,6 +27,7 @@ export const Header = () => {
   const navigation = [
     { name: 'Home', href: '/' },
     { name: 'Recommendations', href: '/recommendations' },
+    { name: 'Trending', href: '/trending' },
     { name: 'Profile', href: '/profile' }
   ];
 
