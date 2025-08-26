@@ -11,6 +11,10 @@ import { ProductDetail } from "./pages/ProductDetail";
 import { Recommendations } from "./pages/Recommendations";
 import { SearchResults } from "./pages/SearchResults";
 import { Profile } from "./pages/Profile";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import PrivateRoute from "./routes/PrivateRoute";
+import PublicRoute from "./routes/PublicRoute";
 import { Cart } from "./pages/Cart";
 import NotFound from "./pages/NotFound";
 
@@ -30,10 +34,40 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/product/:id" element={<ProductDetail />} />
-                  <Route path="/recommendations" element={<Recommendations />} />
+                  <Route
+                    path="/recommendations"
+                    element={
+                      <PrivateRoute>
+                        <Recommendations />
+                      </PrivateRoute>
+                    }
+                  />
                   <Route path="/search" element={<SearchResults />} />
-                  <Route path="/profile" element={<Profile />} />
+                  <Route
+                    path="/profile"
+                    element={
+                      <PrivateRoute>
+                        <Profile />
+                      </PrivateRoute>
+                    }
+                  />
                   <Route path="/cart" element={<Cart />} />
+                  <Route
+                    path="/login"
+                    element={
+                      <PublicRoute>
+                        <Login />
+                      </PublicRoute>
+                    }
+                  />
+                  <Route
+                    path="/signup"
+                    element={
+                      <PublicRoute>
+                        <Signup />
+                      </PublicRoute>
+                    }
+                  />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

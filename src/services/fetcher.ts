@@ -8,9 +8,11 @@ instance.interceptors.response.use(
   (res) => res,
   (error) => {
     if (error?.response?.status === 401) {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("adminDetail");
-      window.location.reload();
+      try {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+      } catch {}
+      window.location.href = "/login";
       throw error;
     }
     if (
@@ -74,8 +76,13 @@ export const doFetch = (
     } as any,
   } as any;
 
-  // const token = localStorage.getItem("authToken");
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2OGE5Y2ZlZWI3OGJkYWMyZjU5ZTNlNzgiLCJpYXQiOjE3NTYyMTk2MDcsImV4cCI6MTc1NjIyMzIwN30.smT7oefICV2rt0seNRXYdQEFJNa1VO2bYNMHkgiGH4c'
+  const token = (() => {
+    try {
+      return localStorage.getItem("authToken");
+    } catch {
+      return null;
+    }
+  })();
 
   if (token) {
     options.headers.Authorization = `Bearer ${token}`;

@@ -16,7 +16,7 @@ export const Profile = () => {
   const { user, updateUser } = useUser();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [userDetails, setUserDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
   const [orderList, setOrderList] = useState([]);
   const [editForm, setEditForm] = useState({
     name: userDetails?.name || '',
@@ -25,17 +25,17 @@ export const Profile = () => {
 
 
   const getUserDetails = async () => {
-    try {
-      const result = await userService.getUserDetails('68a975f34e68827946de7f6b');
+    if (user) {
       setEditForm({
-        name: result?.data?.user.name,
-        email: result?.data?.user.email
+        name: user.name || '',
+        email: user.email || '',
       });
-      setOrderList(result?.data?.orders);
-      setUserDetails(result?.data?.user)
-
-    } catch (error) {
-      console.log(error);
+      setUserDetails({
+        name: user.name || '',
+        email: user.email || '',
+        avatar: user.avatar || '/placeholder.svg',
+        joinDate: user.joinDate || new Date().toISOString().slice(0, 10),
+      });
     }
   }
 
@@ -91,9 +91,12 @@ export const Profile = () => {
             <Card>
               <CardHeader className="text-center">
                 <Avatar className="w-24 h-24 mx-auto mb-4">
-                  <AvatarImage src={userDetails.avatar} alt={userDetails.name} />
+                  <AvatarImage src={userDetails.avatar} alt={userDetails.name || 'User'} />
                   <AvatarFallback className="text-lg">
-                    {userDetails.name.split(' ').map(n => n[0]).join('')}
+                    {userDetails.name ? 
+                      userDetails.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 
+                      'U'
+                    }
                   </AvatarFallback>
                 </Avatar>
 
@@ -127,7 +130,7 @@ export const Profile = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <h2 className="text-xl font-bold">{userDetails.name}</h2>
+                    <h2 className="text-xl font-bold">{userDetails.name || 'User'}</h2>
                     <p className="text-muted-foreground">{userDetails.email}</p>
                     <div className="flex items-center justify-center text-sm text-muted-foreground">
                       <Calendar className="h-4 w-4 mr-1" />

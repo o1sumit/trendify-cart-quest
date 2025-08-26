@@ -8,6 +8,9 @@ import productService from '@/services/api/product/productService';
 import { ArrowLeft, Heart, RotateCcw, Shield, ShoppingCart, Star, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import type { Product } from '@/lib/mock-data';
 
 export const ProductDetail = () => {
 
@@ -15,21 +18,71 @@ export const ProductDetail = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const [productDetails, setProductDetails] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  const fetchProductDetails = async () => {
-    try {
-      const result = await productService.getProductById(id)
-      setProductDetails(result?.data?.data[0])
-    } catch (error) {
-      console.error(error)
-    }
-  }
+  const {
+    data: productDetails,
+    isLoading,
+    isFetching,
+    error,
+  } = useQuery<Product | null, Error>({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      if (!id) return null;
+      const result = await productService.getProductById(id as string);
+      return result?.data?.data?.[0] ?? null;
+    },
+    enabled: !!id,
+    placeholderData: keepPreviousData,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+    retry: 1,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
 
   useEffect(() => {
-    fetchProductDetails()
-  }, [])
+    setSelectedImageIndex(0);
+  }, [id])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen py-8 px-4">
+        <div className="container mx-auto max-w-7xl">
+          <Skeleton className="h-10 w-24 mb-6" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <div className="space-y-4">
+              <Skeleton className="w-full aspect-square" />
+              <div className="grid grid-cols-4 gap-2">
+                <Skeleton className="w-full aspect-square" />
+                <Skeleton className="w-full aspect-square" />
+                <Skeleton className="w-full aspect-square" />
+                <Skeleton className="w-full aspect-square" />
+              </div>
+            </div>
+            <div className="space-y-6">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-3/4" />
+              <div className="flex items-center space-x-3 mb-6">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+              <Skeleton className="h-24 w-full" />
+              <div className="flex space-x-4">
+                <Skeleton className="h-10 w-40" />
+                <Skeleton className="h-10 w-10" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-20 w-full" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!productDetails) {
     return (

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
+import { useUser } from '@/contexts/UserContext';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -13,6 +14,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { getItemCount } = useCart();
+  const { isAuthenticated, user, logout } = useUser();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,9 +91,26 @@ export const Header = () => {
               )}
             </Button>
             
-            <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
-              <User className="h-5 w-5" />
-            </Button>
+            {isAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="icon" onClick={() => navigate('/profile')}>
+                  <User className="h-5 w-5" />
+                </Button>
+                <span className="hidden md:inline text-sm">{user?.name}</span>
+                <Button variant="outline" size="sm" onClick={() => { logout(); navigate('/'); }}>
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="secondary" size="sm" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button variant="default" size="sm" onClick={() => navigate('/signup')}>
+                  Sign Up
+                </Button>
+              </div>
+            )}
 
             {/* Mobile menu button */}
             <Button
