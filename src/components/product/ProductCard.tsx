@@ -57,7 +57,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
           {/* Badges */}
           <div className="absolute top-3 left-3 space-y-1">
             {product.trending && (
-              <Badge className="bg-gradient-primary text-primary-foreground border-0">
+              <Badge className="bg-gradient-primary text-primary-foreground border-0 mr-2">
                 Trending
               </Badge>
             )}

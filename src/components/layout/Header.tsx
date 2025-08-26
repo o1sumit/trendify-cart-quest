@@ -37,7 +37,7 @@ export const Header = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-primary"></div>
+            <img src="/logo.svg" alt="TrendCart" className="h-8 w-8 rounded" />
             <span className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               TrendCart
             </span>
