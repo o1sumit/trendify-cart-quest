@@ -46,7 +46,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
       "group overflow-hidden border-0 shadow-soft hover:shadow-medium transition-all duration-300 hover:-translate-y-1",
       className
     )}>
-      <Link to={`/product/${product._id}`}>
+      <Link to={`/product/${product?._id}`}>
         <div className="relative aspect-square overflow-hidden">
           <img
             src={product.images[0]}
