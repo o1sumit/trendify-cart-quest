@@ -14,9 +14,6 @@ export const Trending = () => {
       const list = Array.isArray(res?.data?.data) ? res.data.data : [];
       return list as Product[];
     },
-    staleTime: 1000 * 60 * 5,
-    gcTime: 1000 * 60 * 30,
-    retry: 1,
   });
 
   const products = useMemo(() => (Array.isArray(data) ? data : []), [data]);

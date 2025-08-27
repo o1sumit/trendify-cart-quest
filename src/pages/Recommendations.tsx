@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Grid3X3, List } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,12 +7,20 @@ import { ProductFilters, ProductFilterState } from '@/components/product/Product
 import { Product } from '@/lib/mock-data';
 import { Skeleton } from '@/components/ui/skeleton';
 import productService from '@/services/api/product/productService';
+import { useQuery } from '@tanstack/react-query';
 
 export const Recommendations = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [products, setProducts] = useState<Product[]>([]); // always array
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, isLoading, error } = useQuery<Product[], Error>({
+    queryKey: ['all-products', 1, 20],
+    queryFn: async () => {
+      const result = await productService.getAllProducts(1, 20);
+      const list = Array.isArray(result?.data?.data)
+        ? (result.data.data as Product[])
+        : [];
+      return list;
+    },
+  });
 
   const [filters, setFilters] = useState<ProductFilterState>({
     categories: [],
@@ -23,26 +31,7 @@ export const Recommendations = () => {
     sortBy: 'recommended',
   });
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
-        const result = await productService.getAllProducts(1, 20);
-        const productList = Array.isArray(result?.data?.data)
-          ? result?.data?.data
-          : [];
-        console.log("productList ", result?.data?.data)
-        setProducts(result?.data?.data);
-      } catch (err) {
-        setError('Failed to fetch products.');
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
+  const products = useMemo(() => Array.isArray(data) ? data : [], [data]);
 
   // Get unique categories and tags safely
   const categories = useMemo(
@@ -134,7 +123,7 @@ export const Recommendations = () => {
         </div>
 
         {/* Recommended Section */}
-        {!loading && recommendedProducts.length > 0 && (
+        {!isLoading && recommendedProducts.length > 0 && (
           <div className="mb-12">
             <div className="flex items-center space-x-2 mb-6">
               <Badge className="bg-gradient-primary text-primary-foreground border-0">
@@ -155,7 +144,7 @@ export const Recommendations = () => {
           </div>
         )}
 
-        {error && <div className="text-center text-red-500 mb-8">{error}</div>}
+        {error && <div className="text-center text-red-500 mb-8">Failed to fetch products.</div>}
 
         {/* Filters and Products */}
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
@@ -204,7 +193,7 @@ export const Recommendations = () => {
                 : 'grid-cols-1'
                 }`}
             >
-              {loading ? (
+              {isLoading ? (
                 Array.from({ length: 6 }).map((_, index) => (
                   <div key={index} className="space-y-2">
                     <Skeleton className="h-48 w-full" />
@@ -223,7 +212,7 @@ export const Recommendations = () => {
               )}
             </div>
 
-            {!loading && filteredProducts.length === 0 && (
+            {!isLoading && filteredProducts.length === 0 && (
               <div className="text-center py-12">
                 <div className="text-muted-foreground mb-4">
                   No products found matching your criteria.
