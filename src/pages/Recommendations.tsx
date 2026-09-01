@@ -1,25 +1,19 @@
-import { useState, useMemo } from 'react';
-import { Grid3X3, List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ProductCard } from '@/components/product/ProductCard';
-import { ProductFilters, ProductFilterState } from '@/components/product/ProductFilters';
-import { Product } from '@/lib/mock-data';
-import { Skeleton } from '@/components/ui/skeleton';
-import productService from '@/services/api/product/productService';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useMemo } from "react";
+import { Grid3X3, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ProductCard } from "@/components/product/ProductCard";
+import { ProductFilters, type ProductFilterState, type ProductSortBy } from "@/components/product/ProductFilters";
+import { Product } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Page, PageHeader, productGridClass } from "@/components/layout/Page";
+import { productService } from "@/services/supabase/productService";
+import { useQuery } from "@tanstack/react-query";
 
 export const Recommendations = () => {
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { data, isLoading, error } = useQuery<Product[], Error>({
-    queryKey: ['all-products', 1, 20],
-    queryFn: async () => {
-      const result = await productService.getAllProducts(1, 20);
-      const list = Array.isArray(result?.data?.data)
-        ? (result.data.data as Product[])
-        : [];
-      return list;
-    },
+    queryKey: ["all-products"],
+    queryFn: () => productService.getAll(),
   });
 
   const [filters, setFilters] = useState<ProductFilterState>({
@@ -28,12 +22,11 @@ export const Recommendations = () => {
     rating: 0,
     inStock: false,
     tags: [],
-    sortBy: 'recommended',
+    sortBy: "recommended",
   });
 
-  const products = useMemo(() => Array.isArray(data) ? data : [], [data]);
+  const products = useMemo(() => (Array.isArray(data) ? data : []), [data]);
 
-  // Get unique categories and tags safely
   const categories = useMemo(
     () => Array.from(new Set(products.map((p) => p?.category).filter(Boolean))),
     [products]
@@ -50,30 +43,25 @@ export const Recommendations = () => {
   );
 
   const filteredProducts = useMemo(() => {
-    let filtered = products.filter((product) => {
+    const filtered = products.filter((product) => {
       if (!product) return false;
 
-      // Category filter
       if (filters.categories.length > 0 && !filters.categories.includes(product.category)) {
         return false;
       }
 
-      // Price range filter
       if (product.price < filters.priceRange[0] || product.price > filters.priceRange[1]) {
         return false;
       }
 
-      // Rating filter
       if (filters.rating > 0 && product.rating < filters.rating) {
         return false;
       }
 
-      // Stock filter
       if (filters.inStock && !product.inStock) {
         return false;
       }
 
-      // Tags filter
       if (filters.tags.length > 0) {
         const hasMatchingTag = filters.tags.some((tag) => product.tags?.includes(tag));
         if (!hasMatchingTag) return false;
@@ -82,26 +70,27 @@ export const Recommendations = () => {
       return true;
     });
 
-    // Sorting
-    filtered.sort((a, b) => {
-      switch (filters.sortBy) {
-        case 'price-low':
+    return [...filtered].sort((a, b) => {
+      const sortBy: ProductSortBy = filters.sortBy;
+      switch (sortBy) {
+        case "price-low":
           return a.price - b.price;
-        case 'price-high':
+        case "price-high":
           return b.price - a.price;
-        case 'rating':
+        case "rating":
           return b.rating - a.rating;
-        case 'name':
+        case "name":
           return a.name.localeCompare(b.name);
-        case 'newest':
-          return b.id.localeCompare(a.id);
-        case 'recommended':
-        default:
+        case "newest":
+          return (b.createdAt || b.id).localeCompare(a.createdAt || a.id);
+        case "recommended":
           return (b.recommended ? 1 : 0) - (a.recommended ? 1 : 0) || b.rating - a.rating;
+        default: {
+          const _exhaustive: never = sortBy;
+          throw new Error(`Unhandled sort: ${_exhaustive}`);
+        }
       }
     });
-
-    return filtered;
   }, [products, filters]);
 
   const recommendedProducts = useMemo(
@@ -110,46 +99,29 @@ export const Recommendations = () => {
   );
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold">
-            Personalized Recommendations
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Discover products tailored to your preferences and shopping history.
-          </p>
-        </div>
+    <Page>
+      <PageHeader
+        title="The shop"
+        description="Browse the full collection. Filter by category, price, and rating."
+      />
 
-        {/* Recommended Section */}
         {!isLoading && recommendedProducts.length > 0 && (
-          <div className="mb-12">
-            <div className="flex items-center space-x-2 mb-6">
-              <Badge className="bg-gradient-primary text-primary-foreground border-0">
-                Just for You
-              </Badge>
-              <h2 className="text-xl font-semibold">Based on your preferences</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="mb-10">
+            <h2 className="font-display text-xl mb-5">Picked for you</h2>
+            <div className={productGridClass}>
               {recommendedProducts.slice(0, 4).map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  className="hover:shadow-glow"
-                />
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
         )}
 
-        {error && <div className="text-center text-red-500 mb-8">Failed to fetch products.</div>}
+        {error && (
+          <p className="text-destructive mb-6">Failed to fetch products.</p>
+        )}
 
-        {/* Filters and Products */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
-          {/* Sidebar Filters */}
-          <div className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <ProductFilters
               onFiltersChange={setFilters}
               categories={categories}
@@ -158,65 +130,60 @@ export const Recommendations = () => {
             />
           </div>
 
-          {/* Main Content */}
           <div className="lg:col-span-3">
-            {/* View Mode Toggle */}
-            <div className="flex justify-between items-center mb-6">
-              <p className="text-muted-foreground">
-                Showing {filteredProducts.length} products
+            <div className="flex items-center justify-between gap-3 mb-5">
+              <p className="text-sm text-muted-foreground">
+                {isLoading
+                  ? "Loading…"
+                  : `${filteredProducts.length} products`}
               </p>
-
-              <div className="flex border rounded-md">
+              <div className="flex h-9 items-center rounded-md border bg-card overflow-hidden">
                 <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-r-none"
+                  variant={viewMode === "grid" ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("grid")}
+                  className="rounded-none"
+                  aria-label="Grid view"
                 >
                   <Grid3X3 className="h-4 w-4" />
                 </Button>
                 <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="rounded-l-none"
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  size="icon"
+                  onClick={() => setViewMode("list")}
+                  className="rounded-none"
+                  aria-label="List view"
                 >
                   <List className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Products Grid */}
             <div
-              className={`grid gap-6 ${viewMode === 'grid'
-                ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'
-                : 'grid-cols-1'
-                }`}
+              className={
+                viewMode === "grid"
+                  ? "grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5"
+                  : "grid grid-cols-1 gap-4"
+              }
             >
-              {isLoading ? (
-                Array.from({ length: 6 }).map((_, index) => (
-                  <div key={index} className="space-y-2">
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                  </div>
-                ))
-              ) : (
-                filteredProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    className={viewMode === 'list' ? 'flex-row' : ''}
-                  />
-                ))
-              )}
+              {isLoading
+                ? Array.from({ length: 6 }).map((_, index) => (
+                    <Skeleton key={index} className="aspect-[3/4] w-full" />
+                  ))
+                : filteredProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      layout={viewMode}
+                    />
+                  ))}
             </div>
 
             {!isLoading && filteredProducts.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-muted-foreground mb-4">
-                  No products found matching your criteria.
-                </div>
+                <p className="text-muted-foreground mb-4">
+                  No products match those filters.
+                </p>
                 <Button
                   variant="outline"
                   onClick={() =>
@@ -226,17 +193,16 @@ export const Recommendations = () => {
                       rating: 0,
                       inStock: false,
                       tags: [],
-                      sortBy: 'recommended',
+                      sortBy: "recommended",
                     })
                   }
                 >
-                  Clear Filters
+                  Clear filters
                 </Button>
               </div>
             )}
           </div>
         </div>
-      </div>
-    </div>
+    </Page>
   );
 };

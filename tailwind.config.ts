@@ -12,13 +12,21 @@ export default {
 	theme: {
 		container: {
 			center: true,
-			padding: '2rem',
+			padding: '1rem',
 			screens: {
-				'2xl': '1400px'
+				'2xl': '1200px'
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+			},
 			colors: {
+				hero: {
+					DEFAULT: 'hsl(var(--hero))',
+					foreground: 'hsl(var(--hero-foreground))',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',

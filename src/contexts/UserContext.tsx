@@ -2,24 +2,25 @@ import React, {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useState,
   ReactNode,
 } from "react";
-import { User } from "@/lib/mock-data";
-import authService, {
-  LoginPayload,
-  SignupPayload,
-} from "@/services/api/auth/authService";
+import {
+  type LoginPayload,
+  type SignupPayload,
+  type User,
+} from "@/lib/types";
+import { authService } from "@/services/supabase/authService";
+import { profileService } from "@/services/supabase/profileService";
 
 interface UserContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
-  updateUser: (userData: Partial<User>) => void;
+  isLoading: boolean;
+  updateUser: (userData: Partial<User>) => Promise<void>;
   login: (payload: LoginPayload) => Promise<void>;
   signup: (payload: SignupPayload) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | null>(null);
@@ -28,78 +29,92 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem("authUser");
-      const storedToken = localStorage.getItem("authToken");
-      if (storedUser) setUser(JSON.parse(storedUser));
-      if (storedToken) setToken(storedToken);
-    } catch {}
-  }, []);
-
-  const updateUser = (userData: Partial<User>) => {
-    if (user) {
-      const updated = { ...user, ...userData } as User;
-      setUser(updated);
-      try {
-        localStorage.setItem("authUser", JSON.stringify(updated));
-      } catch {}
-    }
+  const loadProfile = async (userId: string) => {
+    const profile = await profileService.getByUserId(userId);
+    if (profile) setUser(profile);
   };
 
-  const login = async (payload: LoginPayload) => {
-    const { data } = await authService.login(payload);
-    // Login response is simple like signup - only email and token
-    const normalizedUser: User = {
-      id: data.email, // Use email as ID for login
-      name: data.email, // Use email as name since we don't have more info
-      email: data.email,
-      avatar: "/placeholder.svg",
-      joinDate: new Date().toISOString().slice(0, 10),
+  useEffect(() => {
+    let mounted = true;
+
+    const init = async () => {
+      try {
+        const session = await authService.getSession();
+        if (session?.user && mounted) {
+          await loadProfile(session.user.id);
+        }
+      } finally {
+        if (mounted) setIsLoading(false);
+      }
     };
-    setToken(data.token);
-    setUser(normalizedUser);
-    try {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(normalizedUser));
-    } catch {}
+
+    init();
+
+    const { data: subscription } = authService.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          await loadProfile(session.user.id);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.subscription.unsubscribe();
+    };
+  }, []);
+
+  const login = async (payload: LoginPayload) => {
+    const { user: authUser } = await authService.signIn(payload);
+    if (!authUser) throw new Error("Login failed");
+    await loadProfile(authUser.id);
   };
 
   const signup = async (payload: SignupPayload) => {
-    const { data } = await authService.signup(payload);
-    // Simplified signup response - only email and token
-    const normalizedUser: User = {
-      id: data.email, // Use email as ID for signup
-      name: payload.fullName || payload.username || data.email,
-      email: data.email,
-      avatar: "/placeholder.svg",
-      joinDate: new Date().toISOString().slice(0, 10),
-    };
-    setToken(data.token);
-    setUser(normalizedUser);
-    try {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(normalizedUser));
-    } catch {}
+    const { user: authUser, session } = await authService.signUp(payload);
+    if (!authUser) throw new Error("Signup failed");
+
+    if (!session) {
+      const signedIn = await authService.signIn({
+        email: payload.email,
+        password: payload.password,
+      });
+      if (!signedIn.user) throw new Error("Signup failed");
+      await loadProfile(signedIn.user.id);
+      return;
+    }
+
+    await loadProfile(authUser.id);
   };
 
-  const logout = () => {
-    try {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
-    } catch {}
+  const logout = async () => {
+    await authService.signOut();
     setUser(null);
-    setToken(null);
+  };
+
+  const updateUser = async (userData: Partial<User>) => {
+    if (!user) return;
+
+    const updated = await profileService.update(user.id, {
+      name: userData.name,
+      email: userData.email,
+      username: userData.username,
+    });
+
+    setUser(updated);
   };
 
   return (
     <UserContext.Provider
       value={{
         user,
-        token,
         isAuthenticated: !!user,
+        isLoading,
         updateUser,
         login,
         signup,

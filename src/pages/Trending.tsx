@@ -1,60 +1,43 @@
-import { useMemo } from "react";
-import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/product/ProductCard";
+import { Page, PageHeader, productGridClass } from "@/components/layout/Page";
 import { Skeleton } from "@/components/ui/skeleton";
-import productService from "@/services/api/product/productService";
+import { productService } from "@/services/supabase/productService";
 import { useQuery } from "@tanstack/react-query";
-import type { Product } from "@/lib/mock-data";
 
 export const Trending = () => {
-  const { data, isLoading, error } = useQuery<Product[]>({
+  const { data: products = [], isLoading, error } = useQuery({
     queryKey: ["trending-products"],
-    queryFn: async () => {
-      const res = await productService.getTrendingProducts();
-      const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-      return list as Product[];
-    },
+    queryFn: () => productService.getTrending(),
   });
 
-  const products = useMemo(() => (Array.isArray(data) ? data : []), [data]);
-
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto">
-        <div className="text-center space-y-4 mb-12">
-          <h1 className="text-3xl md:text-4xl font-bold">Trending Now</h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            What's popular today based on community activity.
-          </p>
-        </div>
+    <Page>
+      <PageHeader
+        title="Trending now"
+        description="What people are buying this week."
+        align="left"
+      />
 
-        {error && (
-          <div className="text-center text-red-500 mb-8">
-            Failed to load trending products.
-          </div>
-        )}
+      {error && (
+        <p className="text-destructive mb-6">Failed to load trending products.</p>
+      )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {isLoading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-48 w-full" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-              ))
-            : products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-        </div>
-
-        {!isLoading && products.length === 0 && (
-          <div className="text-center py-12">
-            <Badge variant="outline">No trending products found</Badge>
-          </div>
-        )}
+      <div className={productGridClass}>
+        {isLoading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-full" />
+            ))
+          : products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
       </div>
-    </div>
+
+      {!isLoading && products.length === 0 && (
+        <p className="text-center text-muted-foreground py-16">
+          No trending products yet.
+        </p>
+      )}
+    </Page>
   );
 };
 

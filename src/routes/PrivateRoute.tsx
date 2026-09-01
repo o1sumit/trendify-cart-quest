@@ -1,20 +1,17 @@
-import { ReactNode } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useUser } from '@/contexts/UserContext';
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
+import { LoadingState } from "@/components/layout/LoadingState";
 
 export const PrivateRoute = ({ children }: { children: ReactNode }) => {
-  const { isAuthenticated } = useUser();
+  const { isAuthenticated, isLoading } = useUser();
   const location = useLocation();
 
-  const hasToken = (() => {
-    try {
-      return !!localStorage.getItem('authToken');
-    } catch {
-      return false;
-    }
-  })();
+  if (isLoading) {
+    return <LoadingState />;
+  }
 
-  if (!isAuthenticated || !hasToken) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
@@ -22,5 +19,3 @@ export const PrivateRoute = ({ children }: { children: ReactNode }) => {
 };
 
 export default PrivateRoute;
-
-
